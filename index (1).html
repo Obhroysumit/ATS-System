@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TalentTrack ATS</title>
+<style>
+:root{--navy:#0f172a;--blue:#2563eb;--bg:#f1f5f9;--text:#1e293b;--muted:#64748b;--line:#e2e8f0}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(90deg,var(--navy),#1e40af);color:#fff;padding:16px 24px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+header h1{margin:0;font-size:24px}header p{margin:2px 0 0;color:#bfdbfe;font-size:14px}
+nav button{border:0;color:#fff;background:rgba(255,255,255,.18);padding:10px 18px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;margin-left:8px}
+nav button.active{background:var(--blue)}
+main{max-width:1200px;margin:0 auto;padding:20px}
+.card{background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:18px}
+.hidden{display:none}
+.search{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+input,select{font:inherit;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;width:100%;background:#fff}
+.search input{flex:1;min-width:200px}.search select{width:auto}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+@media(max-width:850px){.layout{grid-template-columns:1fr}}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 4px}
+h2{margin:0 0 4px;font-size:18px}.hint{font-size:12px;color:var(--muted);font-style:italic;margin:0}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.btns .wide{grid-column:span 1}
+button.b{border:0;color:#fff;padding:10px 6px;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px}
+button.b:hover{filter:brightness(1.1)}button.b:disabled{background:#cbd5e1!important;cursor:not-allowed}
+.green{background:#22c55e}.blue{background:var(--blue)}.red{background:#ef4444}.purple{background:#8b5cf6}.grey{background:#64748b}
+.tablewrap{overflow-x:auto;padding:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--navy);color:#fff;text-align:left;padding:12px;white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--line)}
+tbody tr{cursor:pointer}tbody tr:nth-child(even){background:#f8fafc}tbody tr:hover{background:#eff6ff}
+tbody tr.sel{background:#dbeafe}
+.badge{color:#fff;font-weight:700;font-size:12px;padding:4px 12px;border-radius:6px;display:inline-block}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px}
+.stat{border-left:7px solid;padding:14px 20px}.stat span{color:var(--muted);font-size:14px}.stat b{display:block;font-size:34px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:850px){.two{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:14px}
+.bar .n{width:90px;color:var(--muted)}.bar .t{flex:1;background:#f1f5f9;border-radius:8px;height:22px;overflow:hidden}
+.bar .f{height:100%;border-radius:8px;transition:width .4s}
+.rec{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.rec small{color:var(--muted)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 22px;border-radius:10px;color:#fff;font-weight:600;opacity:0;transition:.3s;pointer-events:none}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>TalentTrack ATS</h1><p>Manage candidates, track hiring stages and monitor recruitment</p></div>
+  <nav><button id="navC" class="active">Candidates</button><button id="navD">Dashboard</button></nav>
+</header>
+<main>
+  <section id="pC">
+    <div class="card search">
+      <input id="q" placeholder="Search by name, skill or job role...">
+      <select id="fs"></select>
+    </div>
+    <div class="layout">
+      <div class="card">
+        <h2>Candidate Details</h2><p class="hint">Select a row in the table to edit it.</p>
+        <label>FULL NAME</label><input id="name">
+        <label>EMAIL</label><input id="email" type="email">
+        <label>SKILLS (e.g. Java, SQL)</label><input id="skills">
+        <label>JOB ROLE</label><input id="role">
+        <label>HIRING STAGE</label><select id="stage"></select>
+        <div class="btns">
+          <button class="b green" id="add">Add</button>
+          <button class="b blue" id="upd" disabled>Update</button>
+          <button class="b red" id="del">Delete</button>
+          <button class="b purple" id="next">Next Stage</button>
+          <button class="b grey" id="clr">Clear</button>
+        </div>
+      </div>
+      <div class="card tablewrap">
+        <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Skills</th><th>Job Role</th><th>Stage</th><th>Applied On</th></tr></thead>
+        <tbody id="rows"></tbody></table>
+      </div>
+    </div>
+  </section>
+  <section id="pD" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div class="two">
+      <div class="card"><h2>Candidates by Stage</h2><div id="chart"></div></div>
+      <div class="card"><h2>Recent Applicants</h2><div id="recent"></div></div>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+<script>
+const STAGES=["APPLIED","SCREENING","INTERVIEW","OFFER","HIRED","REJECTED"];
+const COLORS=["#3b82f6","#8b5cf6","#f59e0b","#14b8a6","#22c55e","#ef4444"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let list=[],selId=null;
+
+function load(){
+  try{list=JSON.parse(localStorage.getItem("ats_candidates"))||[]}catch(e){list=[]}
+  if(!list.length&&!localStorage.getItem("ats_seeded")){
+    const d=new Date().toISOString().slice(0,10);
+    list=[["Aarav Sharma","aarav@example.com","Java, SQL","Backend Developer","INTERVIEW"],
+          ["Priya Singh","priya@example.com","React, CSS","Frontend Developer","SCREENING"],
+          ["Rohan Mehta","rohan@example.com","Node, MongoDB","Full Stack Developer","HIRED"],
+          ["Sneha Patel","sneha@example.com","Python, ML","Data Analyst","APPLIED"]]
+      .map((a,i)=>({id:i+1,name:a[0],email:a[1],skills:a[2],role:a[3],stage:a[4],date:d}));
+    localStorage.setItem("ats_seeded","1");save();
+  }
+}
+function save(){try{localStorage.setItem("ats_candidates",JSON.stringify(list))}catch(e){}}
+function toast(msg,ok=true){const t=$("toast");t.textContent=msg;t.style.background=ok?"#16a34a":"#dc2626";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
+const count=s=>list.filter(c=>c.stage===s).length;
+
+function render(){
+  const q=$("q").value.trim().toLowerCase(),f=$("fs").value;
+  const rows=list.filter(c=>(!q||[c.name,c.skills,c.role].some(x=>x.toLowerCase().includes(q)))&&(f==="ALL STAGES"||c.stage===f));
+  $("rows").innerHTML=rows.length?rows.map(c=>`<tr data-id="${c.id}" class="${c.id===selId?"sel":""}"><td>${c.id}</td><td>${esc(c.name)}</td><td>${esc(c.email)}</td><td>${esc(c.skills)}</td><td>${esc(c.role)}</td><td><span class="badge" style="background:${COLORS[STAGES.indexOf(c.stage)]}">${c.stage}</span></td><td>${c.date}</td></tr>`).join(""):`<tr><td colspan="7" class="empty">No candidates found.</td></tr>`;
+}
+function renderDash(){
+  const total=list.length,h=count("HIRED"),r=count("REJECTED");
+  const st=[["Total Candidates",total,"#2563eb"],["In Pipeline",total-h-r,"#f59e0b"],["Hired",h,"#22c55e"],["Rejected",r,"#ef4444"]];
+  $("stats").innerHTML=st.map(s=>`<div class="card stat" style="border-color:${s[2]}"><span>${s[0]}</span><b style="color:${s[2]}">${s[1]}</b></div>`).join("");
+  const max=Math.max(1,...STAGES.map(count));
+  $("chart").innerHTML=STAGES.map((s,i)=>`<div class="bar"><span class="n">${s}</span><div class="t"><div class="f" style="width:${count(s)/max*100}%;background:${COLORS[i]}"></div></div><b>${count(s)}</b></div>`).join("");
+  const rec=list.slice(-5).reverse();
+  $("recent").innerHTML=rec.length?rec.map(c=>`<div class="rec"><div><b>${esc(c.name)}</b><br><small>${esc(c.role)} | ${c.date}</small></div><b style="color:${COLORS[STAGES.indexOf(c.stage)]}">${c.stage}</b></div>`).join(""):`<p class="empty">No candidates yet. Add your first one!</p>`;
+}
+function refresh(){save();render();renderDash()}
+function clearForm(){["name","email","skills","role"].forEach(i=>$(i).value="");$("stage").selectedIndex=0;selId=null;$("upd").disabled=true;render()}
+function valid(ignore){
+  const v=i=>$(i).value.trim();
+  if(!v("name")||!v("email")||!v("skills")||!v("role")){toast("Please fill in all the fields.",false);return false}
+  if(!/^[\w.+-]+@[\w-]+\.[\w.]+$/.test(v("email"))){toast("Please enter a valid email address.",false);return false}
+  if(list.some(c=>c.id!==ignore&&c.email.toLowerCase()===v("email").toLowerCase())){toast("A candidate with this email already exists.",false);return false}
+  return true;
+}
+function fill(c){c.name=$("name").value.trim();c.email=$("email").value.trim();c.skills=$("skills").value.trim();c.role=$("role").value.trim();c.stage=$("stage").value}
+function current(){const c=list.find(x=>x.id===selId);if(!c)toast("Please select a candidate from the table first.",false);return c}
+
+$("add").onclick=()=>{if(!valid(-1))return;const c={id:Math.max(0,...list.map(x=>x.id))+1,date:new Date().toISOString().slice(0,10)};fill(c);list.push(c);refresh();clearForm();toast("Candidate added successfully.")};
+$("upd").onclick=()=>{const c=current();if(!c||!valid(c.id))return;fill(c);refresh();clearForm();toast("Candidate updated successfully.")};
+$("del").onclick=()=>{const c=current();if(!c)return;if(confirm("Are you sure you want to delete "+c.name+"?")){list=list.filter(x=>x!==c);refresh();clearForm();toast("Candidate deleted successfully.")}};
+$("next").onclick=()=>{const c=current();if(!c)return;const i=STAGES.indexOf(c.stage);if(i>=4){toast("This candidate has already reached a final stage ("+c.stage+").",false);return}c.stage=STAGES[i+1];refresh();clearForm();toast(c.name+" moved to "+c.stage+".")};
+$("clr").onclick=clearForm;
+$("q").oninput=render;$("fs").onchange=render;
+$("rows").onclick=e=>{
+  const tr=e.target.closest("tr[data-id]");if(!tr)return;
+  const c=list.find(x=>x.id===+tr.dataset.id);selId=c.id;
+  $("name").value=c.name;$("email").value=c.email;$("skills").value=c.skills;$("role").value=c.role;$("stage").value=c.stage;
+  $("upd").disabled=false;render();
+};
+function show(p){
+  $("pC").classList.toggle("hidden",p!=="C");$("pD").classList.toggle("hidden",p!=="D");
+  $("navC").classList.toggle("active",p==="C");$("navD").classList.toggle("active",p==="D");
+  if(p==="D")renderDash();
+}
+$("navC").onclick=()=>show("C");$("navD").onclick=()=>show("D");
+
+$("stage").innerHTML=STAGES.map(s=>`<option>${s}</option>`).join("");
+$("fs").innerHTML=["ALL STAGES",...STAGES].map(s=>`<option>${s}</option>`).join("");
+load();render();renderDash();
+</script>
+</body>
+</html>
