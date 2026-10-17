@@ -26,4 +26,4 @@ A desktop Applicant Tracking System (ATS) built with Java Swing.
    java ATS
 
 ## Author
-Your Name
+Sumit Kumar
